@@ -118,8 +118,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User loginPage(String username, String id) {
-        User user = userMapper.loginPage(username,id);
+    public User loginPage(String username, String id,String role) {
+        role="team".equals(role)?"user":role;
+
+        User user = userMapper.loginPage(username,id,role);
         return user;
     }
 }

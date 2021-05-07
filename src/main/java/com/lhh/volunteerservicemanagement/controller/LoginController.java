@@ -44,28 +44,24 @@ public class LoginController implements WebMvcConfigurer {
 
 
     @RequestMapping(value = "/loginPage",method = {RequestMethod.POST,RequestMethod.GET})
-    private Integer login( LoginRequst request, HttpSession session){
+    private String login( LoginRequst request, HttpSession session){
         String name = request.getUsername();
-        String id = request.getPassword();
-        User tname = userService.loginPage(name,id);
+        String password = request.getPassword();
+        String role = request.getRole();
+        User tname = userService.loginPage(name,password,role);
         System.out.println(tname);
         if (tname==null){
-            return 500;
+            return "500";
         }else {
             session.setAttribute("tname",tname.getUsername());
-            return 200;
+            if ("admin".equals(role)){
+                return "./index.html";
+            }else if ("user".equals(role)){
+                return "./volunteer_index.html";
+            }else {
+                return "./team_index.html";
+            }
         }
-//        if(tname == null){
-//            mv.clear();
-//            mv.setViewName("Login2");
-//            return mv;
-//        }else {
-//            session.setAttribute("tname",tname.getUsername());
-//            System.out.println(tname.getUsername());
-//            //验证通过转跳首页
-//            mv.setViewName("homePage");
-//            return mv;
-//        }
     }
 
 }

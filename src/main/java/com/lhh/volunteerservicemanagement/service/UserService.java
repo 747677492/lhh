@@ -43,6 +43,6 @@ public interface UserService {
     @Select("select username,id from user where username=#{username}")
     User getAllUserByName(@Param("username") String username);
 
-    User loginPage(String username,String id);
+    User loginPage(String username,String id,String role);
 
 }
