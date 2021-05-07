@@ -1,0 +1,376 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>
+        团队信息管理
+    </title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="stylesheet" href="css/main.css" media="all">
+    <script type="text/javascript" src="lib/loading/okLoading.js"></script>
+    <!--导入ElementUI样式列表，css样式一般都在页面头部-->
+    <link rel="stylesheet" href="/css/index.css">
+    <style>
+        .x-nav{
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="x-body" id="app">
+    <div class="x-nav">
+            <span class="layui-breadcrumb">
+              <a><cite>首页</cite></a>
+              <a><cite>志愿者团队管理</cite></a>
+              <a><cite>{{title}}</cite></a>
+            </span>
+        <span class="">
+            <a href="javascript:location.replace(location.href);" title="刷新"><i class="layui-icon"><cite>ဂ</cite></i></a>
+        </span>
+    </div>
+    <el-form :model="community" :rules="rules" ref="communityFormRef" label-width="120px" class="demo-ruleForm">
+        <el-form-item label="团队编码" prop="teamCode" >
+            <el-input v-model="community.teamCode"  placeholder="请输入团队编码"></el-input>
+        </el-form-item>
+        <el-form-item label="团队名称" prop="teamName" >
+            <el-input v-model="community.teamName" placeholder="请输入团队名称"></el-input>
+        </el-form-item>
+        <el-form-item label="团队介绍" prop="teamInfo" >
+            <textarea v-model="community.teamInfo" placeholder="请输入团队介绍" name="desc" class="layui-textarea"></textarea>
+        </el-form-item>
+        <el-form-item label="团队照片" prop="img">
+            <el-upload
+                    class="upload-demo"
+                    action="/estate/fileupload/"
+                    :on-preview="handlePreview"
+                    :on-remove="handleRemove"
+                    :on-success="handleSuccess"
+                    :file-list="fileList"
+                    list-type="picture">
+                <el-button size="small" type="primary">点击上传</el-button>
+                <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过10M</div>
+            </el-upload>
+        </el-form-item>
+        <el-form-item label="创建时间" prop="createDate">
+            <div class="block">
+                <el-date-picker
+                    v-model="community.createDate"
+                    align="left"
+                    type="date"
+                    placeholder="选择创建时间"
+                    :picker-options="pickerOptions">
+
+                </el-date-picker>
+            </div>
+
+        </el-form-item>
+        <el-form-item label="服务类型" prop="serviceType">
+            <el-select v-model="community.serviceType" @change="addServiceTypeId" clearable placeholder="---请选择">
+                <el-option
+                    v-for="item in serviceTypeOptions"
+                    placeholder="选择服务类型"
+                    :key="item.id"
+                    :label="item.serviceType"
+                    :value="item.serviceType"
+                ></el-option>
+            </el-select>
+        </el-form-item>
+        <el-form-item label="负责人姓名" prop="fzrName">
+            <el-input v-model="community.fzrName" placeholder="请输入负责人姓名"></el-input>
+        </el-form-item>
+        <el-form-item label="联系方式" prop="fzrPhone">
+            <el-input v-model="community.fzrPhone"></el-input>
+        </el-form-item>
+        <el-form-item label="团队人数" prop="teamNumber">
+            <el-input v-model="community.teamNumber" placeholder="输入团队人数"></el-input>
+        </el-form-item>
+        <el-form-item label="注册时间" prop="createTime">
+            <div class="block">
+                <el-date-picker
+                        v-model="community.createTime"
+                        align="left"
+                        type="date"
+                        placeholder="选择创建时间"
+                        :picker-options="pickerOptions">
+                </el-date-picker>
+            </div>
+        </el-form-item>
+        <el-form-item label="更新时间" prop="updateTime">
+            <div class="block">
+                <el-date-picker
+                        v-model="community.updateTime"
+                        align="left"
+                        type="date"
+                        placeholder="选择创建时间"
+                        :picker-options="pickerOptions">
+                </el-date-picker>
+            </div>
+        </el-form-item>
+        <el-form-item label="备注" prop="remarks">
+            <textarea x-model="community.remarks" placeholder="请输入内容" name="desc" class="layui-textarea"></textarea>
+        </el-form-item>
+<!--        <el-form-item label="备注" prop="status">-->
+<!--            <el-radio-group v-model="community.status">-->
+<!--                <el-radio label="0">启用</el-radio>-->
+<!--                <el-radio label="1">停用</el-radio>-->
+<!--            </el-radio-group>-->
+<!--        </el-form-item>-->
+        <el-form-item>
+            <el-button type="primary" @click="save()" style="text-align: center">保存</el-button>
+            <el-button @click="clearAll()" style="text-align: center">重置</el-button>
+        </el-form-item>
+    </el-form>
+</div>
+<script src="lib/layui/layui.js" charset="utf-8"></script>
+<script src="js/x-layui.js" charset="utf-8"></script>
+<!--js脚本一般是放在页面尾部-->
+<!--Vue js脚本-->
+<script src="/js/vue.js" charset="utf-8"></script>
+<!--引入ElementUI组件库-->
+<script src="/js/index.js" charset="utf-8"></script>
+<!--引入Axios js脚本-->
+<script src="/js/axios.js" charset="utf-8"></script>
+<script type="text/javascript">
+    var app = new Vue({
+        el:"#app",
+        data:{
+            title:"添加团队",
+            community:{img:"",id:"",serviceType:'',updateTime:null,},
+            serviceTypeOptions:[{
+               id:'',
+               serviceType:''
+            },{
+                id:'',
+                serviceType: ''
+            }
+            ],
+            fileList:[],
+            rules: {
+                teamCode: [
+                    { required: true, message: '请输入团队编号', trigger: 'blur' }
+                ],
+                teamName: [
+                    { required: true, message: '请输入团队名称', trigger: 'blur' }
+                ],
+                teamInfo: [
+                    { required: true, message: '请输入团队介绍', trigger: 'blur' }
+                ],
+                img: [
+                    { required: true, message: '请选择相片', trigger: 'blur' }
+                ],
+                createDate: [
+                    { required: true, message: '请选择创建时间', trigger: 'blur' }
+                ],
+                serviceType: [
+                    { required: true, message: '请选择服务类型', trigger: 'blur' }
+                ],
+                fzrName: [
+                    { required: true, message: '请输入负责人姓名', trigger: 'blur' }
+                ],
+                fzrPhone: [
+                    { required: true, message: '请输入联系方式', trigger: 'blur' },
+                ],
+                teamNumber:[
+                    { required: true, message: '请输入团队人数', trigger: 'blur' }
+                ],
+                createTime:[
+                    { required: true, message: '请输入注册时间', trigger: 'blur' }
+                ],
+                status:[
+                    { required: true, message: '请输入备注信息', trigger: 'blur' }
+                ],
+                thumbnail:[
+                    { required: true, message: '请上传团队照片', trigger: 'change' }
+                ]
+            }
+        },
+        methods:{
+            // 通过ID查询信息
+            findById(){
+                axios.get("/team/findById?id="+this.community.id).then((res)=>{
+                    this.community = res.data.data;
+                     this.community.updateTime = this.updateTime(new Date().toUTCString(),'yyyy-MM-dd HH:mm:ss')
+                    this.fileList.push({url:"http://localhost:2222/estate"+this.community.img});
+                });
+            },
+            getAllServiceType(){
+              axios.post("/serviceType/searchAll").then((res)=>{
+                  console.log("获取服务类型数据",res)
+                    if(res.status===2000){
+                        this.serviceTypeOptions = []
+                        res.data.forEach((item)=>{
+                            this.serviceTypeOptions.push({
+                                serviceId:item.id,
+                                serviceType:item.serviceType
+                            })
+                        })
+                    }
+                });
+            },
+            addServiceTypeId(data){
+                console.log("改变的数据",data);
+                if(this.serviceTypeOptions.length>=1){
+                    const array = this.serviceTypeOptions.filter((item)=>{
+                        if(item.serviceType === data){
+                            return item
+                        }
+                    })
+                    if(array.length>=1){
+                        this.community.serviceId = array[0].id
+                        this.community.serviceType = array[0].serviceType
+                    }else {
+                        return
+                    }
+                }else {
+                    this.getAllServiceType()
+                    this.addServiceTypeId(data)
+                }
+            },
+            handleSuccess(response, file, fileList){
+                this.community.img=response.data;
+                console.log("文件",file,)
+                console.log("传给图片的信息",response.data)
+            },
+            handleRemove() {
+                axios.get("/estate/delfile?fileName="+this.community.img).then((res)=>{
+                    app.community.img="";
+                    if(res.data.flag){
+                        app.fileList=[];
+                        this.$message({
+                            message: '图片删除成功',
+                            type: 'success'
+                        });
+                    }
+                });
+            },
+            handlePreview(file) {
+                console.log(file);
+            },
+            handleExceed(files, fileList) {
+                this.$message.warning(`当前限制选择 1 个文件，本次选择了 ${files.length} 个文件，共选择了 ${files.length + fileList.length} 个文件`);
+            },
+            //文件删除提示
+            beforeRemove(file, fileList) {
+                return this.$confirm(`确定移除 ${ file.name }？`);
+            },
+            //表达重置
+            clearAll() {
+                this.$refs.communityFormRef.resetFields();
+                if(this.fileList.length>0) {
+                    this.handleRemove();
+                }
+            },
+            save(){
+                var method = "";
+                if(this.community.id != null){
+                    method = "update"
+                }else{
+                    method = "add"
+                }
+                this.$refs.communityFormRef.validate((valid) => {
+                    if (valid) {
+                        axios.post("/team/"+method,this.community).then((res)=>{
+                            if(res.data.flag){
+                                this.$message({
+                                    message: res.data.message,
+                                    type: 'success'
+                                });
+                                if(method === "add")app.clearAll();
+                            }
+                        });
+                    } else {
+                        this.$message({
+                            message: "提交错误，表中信息有误",
+                            type: 'error'
+                        });
+                        return false;
+                    }
+                });
+            },
+            imgUrl(){
+                return app.community.thumbnail;
+            },
+            getQueryString(name){
+                let reg = `(^|&)${name}=([^&]*)(&|$)`
+                let r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]); return null;
+            },
+            updateTime(date, format) {
+                date = new Date(date);
+                var o = {
+                    'M+' : date.getMonth() + 1, //month
+                    'd+' : date.getDate(), //day
+                    'H+' : date.getHours()+8, //hour+8小时
+                    'm+' : date.getMinutes(), //minute
+                    's+' : date.getSeconds(), //second
+                    'q+' : Math.floor((date.getMonth() + 3) / 3), //quarter
+                    'S' : date.getMilliseconds() //millisecond
+                };
+                if (/(y+)/.test(format))
+                    format = format.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length));
+                for (var k in o)
+                    if (new RegExp('(' + k + ')').test(format))
+                        format = format.replace(RegExp.$1, RegExp.$1.length == 1 ? o[k] : ('00' + o[k]).substr(('' + o[k]).length));
+                return new Date(format);
+            }
+        },
+        created:function(){
+            this.getAllServiceType()
+            this.community.updateTime = this.updateTime(new Date().toUTCString(),'yyyy-MM-dd HH:mm:ss')
+            layui.use(['element','layer','form'], function(){
+                $ = layui.jquery;//jquery
+                lement = layui.element();//面包导航
+                layer = layui.layer;//弹出层
+                form = layui.form();
+                okLoading.close($);
+            });
+            //获取父页面传递参数，团队ID
+            this.community.id = this.getQueryString("id");
+            //根据小区ID获取小区对象，进行数据回显
+            if(this.community.id != null && this.community.id != ''){
+                this.community.updateTime = null
+                this.title="修改小区";
+                this.findById();
+            }
+        }
+    });
+</script>
+<!--栏目缩略图上传-->
+<script>
+    function upload()
+    {
+        var formData = new FormData();
+        formData.append('images', $('#previewImg')[0].files[0]);
+        //console.log(formData);
+        layer.msg('图片上传中', {icon: 16});
+        $.ajax({
+            type:"post",
+            processData: false,
+            contentType: false,
+            url:"xxxx",
+            data:formData,
+            success:function(data){
+                if(data.status == 1){
+                    console.log(data.image_name);
+                    layer.closeAll('loading');
+                    //layer.msg(data.info,{icon:1,time:1000});
+                    $("#pimages").attr('src',data.image_name);
+                    $("#avatar").val(data.image_name);
+                    $(".imgs").show();
+                    return false;
+                }else{
+                    layer.msg(data.info,{icon:2,time:1000});
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>

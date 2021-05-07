@@ -1,0 +1,420 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>
+        项目活动管理
+    </title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="stylesheet" href="css/main.css" media="all">
+    <script type="text/javascript" src="lib/loading/okLoading.js"></script>
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <!--导入ElementUI样式列表，css样式一般都在页面头部-->
+    <link rel="stylesheet" href="/css/index.css">
+</head>
+<style>
+    .actionBox{margin-top: 20px}
+</style>
+<body>
+<div class="x-nav">
+            <span class="layui-breadcrumb">
+              <a><cite>首页</cite></a>
+              <a><cite>项目活动管理</cite></a>
+              <a><cite>活动列表</cite></a>
+            </span>
+    <span class="">
+                <a href="javascript:location.replace(location.href);" title="刷新"><i class="layui-icon"><cite>ဂ</cite></i></a>
+            </span>
+</div>
+<div class="x-body" id="app">
+    <div>
+        <span class="demonstration">时间范围</span>
+        <el-date-picker
+                v-model="selectDate"
+                type="daterange"
+                :picker-options="pickerOptions"
+                range-separator="——"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                @change="dateChange">
+        </el-date-picker>
+        <span class="demonstration">搜索关键字</span>
+        <el-input
+                placeholder="请输入活动名称"
+                v-model="searchMap.teamName"
+                style="width: 20%">
+        </el-input>
+        <!--        {{searchMap.teamName}}}-->
+        <el-button type="primary" plain @click="searchMap.pageNum=1;checkedIds=[];search();">搜索</el-button>
+    </div>
+    <div class="actionBox">
+<!--        <button class="layui-btn layui-btn-danger" @click="delAll()"><i class="layui-icon">&#xe640;</i>批量删除</button>-->
+<!--        <button class="layui-btn" @click="community_add('添加','activity_add.html','1000','600')"><i class="layui-icon">&#xe608;</i>添加</button>-->
+        <!-- <span class="x-right" style="line-height:40px">共有数据：<span class="layui-badge">2</span> 条</span> -->
+    </div>
+    <table class="layui-table">
+        <thead>
+        <tr>
+            <th>
+                <input type="checkbox" name="" value="" :checked="checkedIds.length===communityList.length"
+                       @click="allChecked">
+            </th>
+            <th>
+                ID
+            </th>
+            <th>
+                活动名称
+            </th>
+            <th>
+                所属团队
+            </th>
+            <th>
+                活动标题
+            </th>
+            <th>
+                活动地址
+            </th>
+            <th>
+                开始时间
+            </th>
+            <th>
+                结束时间
+            </th>
+            <th>
+                创建时间
+            </th>
+            <th>
+                更新时间
+            </th>
+            <th>
+                活动状态
+            </th>
+<!--            <th>-->
+<!--                操作-->
+<!--            </th>-->
+        </tr>
+        </thead>
+        <tbody id="x-img">
+        <tr v-for="(community,index) in communityList">
+            <td>
+                <input type="checkbox"  name="" :value="community.id" v-model="checkedIds">
+            </td>
+            <td>{{community.id}}</td>
+            <td>{{community.activityName}}</td>
+            <td>{{community.teamName}}</td>
+            <td>{{community.title}}</td>
+            <td>{{community.address}}</td>
+            <td>{{dateFormat(community.startTime,"YYYY-MM-DD HH:mm:ss")}}</td>
+            <td>{{dateFormat(community.endTime,"YYYY-MM-DD HH:mm:ss")}}</td>
+            <td>{{dateFormat(community.createTime,"YYYY-MM-DD HH:mm:ss")}}</td>
+            <td>{{dateFormat(community.updateTime,"YYYY-MM-DD HH:mm:ss")}}</td>
+            <!--            <td>{{community.status}}</td>-->
+            <td class="td-status"> <span :class="community.status == 0 ?'layui-btn layui-btn-normal':'layui-btn layui-btn-normal'"> {{community.status == 0 ?"未开始":"已结束"}}</span>
+            </td>
+            <td class="td-manage">
+<!--                <a style="text-decoration:none" @click="community.status == 0 ?admin_stop(index,community.id):admin_start(index,community.id)" href="javascript:;" title="状态">-->
+<!--                    <i class="layui-icon" v-if="community.status==0">&#xe601;</i>-->
+<!--                    <i class="layui-icon" v-if="community.status==1">&#xe62f;</i>-->
+<!--                </a>-->
+<!--                <a title="编辑" href="javascript:;" @click="community_edit('编辑','activity_add.html?id='+community.id,'1000','600')"-->
+<!--                   class="ml-5" style="text-decoration:none">-->
+<!--                    <i class="layui-icon">&#xe642;</i>-->
+<!--                </a>-->
+<!--                <a title="删除" href="javascript:;" @click="delOne(community.id)"-->
+<!--                   style="text-decoration:none">-->
+<!--                    <i class="layui-icon">&#xe640;</i>-->
+<!--                </a>-->
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <!--ElementUI分页-->
+    <el-pagination
+            background
+            layout="prev, pager, next, sizes"
+            :total="total"
+            hide-on-single-page
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="searchMap.pageNum"
+            :page-sizes="[2, 10, 20, 100]"
+            :page-size="searchMap.pageSize"
+            style="text-align: right;">
+    </el-pagination>
+
+</div>
+<script src="lib/layui/layui.js" charset="utf-8"></script>
+<script src="js/x-layui.js" charset="utf-8"></script>
+<!--js脚本一般是放在页面尾部-->
+<!--Vue js脚本-->
+<script src="/js/vue.js" charset="utf-8"></script>
+<!--引入ElementUI组件库-->
+<script src="/js/index.js" charset="utf-8"></script>
+<!--引入Axios js脚本-->
+<script src="/js/axios.js" charset="utf-8"></script>
+<!--引入时间插件包Momentjs-->
+<script src="/js/moment.min.js" charset="utf-8"></script>
+<script>
+    var app = new Vue({
+        el:"#app",//声明Vue作用域,在html页面上要声明Vue的作用域<div class="x-body" id="app">
+        data:{
+            communityList:[],
+            total:20,
+            searchMap:{"startTime":"","endTime":"","teamName":"","pageNum":1,"pageSize":2},
+            selectDate:['',''],
+            checkedIds: [],
+            all_cheched:false,
+            pickerOptions: {
+                shortcuts: [{
+                    text: '最近一周',
+                    onClick(picker) {
+                        const end = new Date();
+                        const start = new Date();
+                        start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+                        picker.$emit('pick', [start, end]);
+                    }
+                }, {
+                    text: '最近一个月',
+                    onClick(picker) {
+                        const end = new Date();
+                        const start = new Date();
+                        start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+                        picker.$emit('pick', [start, end]);
+                    }
+                }, {
+                    text: '最近三个月',
+                    onClick(picker) {
+                        const end = new Date();
+                        const start = new Date();
+                        start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
+                        picker.$emit('pick', [start, end]);
+                    }
+                }]
+            }
+        },
+        methods:{
+            //分页条件查询小区列表
+            search(){
+                console.log("=======",this.searchMap)
+                //ajax异步请求，不需要刷新页面，就可以动态刷新页面数据
+                axios.post("/activity/search",this.searchMap).then((res)=>{
+                    app.communityList = res.data.data;
+                    app.total = res.data.total;
+                    console.log(res)
+                });
+            },
+            //handleSizeChange每页数量发生变化后触发的方法
+            handleSizeChange(pageSize){
+                //清理选择
+                this.checkedIds=[];
+                this.searchMap.pageSize = pageSize;
+                this.search();
+            },
+            //handleCurrentChange页码变化触发方法
+            handleCurrentChange(pageNum){
+                //清理选择
+                this.checkedIds=[];
+                this.searchMap.pageNum = pageNum;
+                this.search();
+            },
+            //时间区间发生改变，searcHMap中时间区间条件也要变化
+            dateChange(){
+                //如果未选择时间区间或清理了时间区间，则清除时间条件
+                if(this.selectDate == null || this.selectDate.length ==0){
+                    this.searchMap.startTime='';
+                    this.searchMap.endTime='';
+                }else{//如果有时间区间，则添加时间条件
+                    if(this.selectDate[0] !=null && this.selectDate[0] != ''){
+                        this.searchMap.startTime=this.dateFormat(this.selectDate[0]);
+                    }
+                    if(this.selectDate[1] !=null && this.selectDate[1] != '') {
+                        this.searchMap.endTime = this.dateFormat(this.selectDate[1]);
+                    }
+                }
+            },
+            //时间格式化方法
+            dateFormat(date,format){
+                if(format == null || format == ''){
+                    format = "YYYY-MM-DD HH:mm:ss";
+                }
+                return moment(date).format(format);
+            },
+            /*---------------下面都是LayUI方法-----------------------*/
+            /*添加*/
+            community_add(title,url,w,h){
+                this.x_admin_show(title,url,w,h);
+            },
+            /*停用*/
+            admin_stop(index,communityId){
+                layer.confirm('确定修改状态吗？',()=>{
+                    axios.get("/community/upStatus/1/"+communityId).then((res)=>{
+                        app.communityList[index].status = 1;
+                        layer.msg('已结束!',{icon: 5,time:1000});
+                    });
+
+                });
+            },
+            /*启用*/
+            admin_start(index,communityId){
+                layer.confirm('确认要启用吗？',()=>{
+                    axios.get("/community/upStatus/0/"+communityId).then((res)=>{
+                        app.communityList[index].status = 0;
+                        layer.msg('未开始!',{icon: 6,time:1000});
+                    });
+                });
+            },
+            //拼接完整图片地址
+            imgUrl(url){
+                return "http://localhost:2222/estates"+url;
+            },
+            //编辑
+            community_edit(title,url,w,h) {
+                this.x_admin_show(title,url,w,h);
+            },
+            /*弹出层*/
+            /*
+                参数解释：
+                title	标题
+                url		请求的url
+                id		需要操作的数据id
+                w		弹出层宽度（缺省调默认值）
+                h		弹出层高度（缺省调默认值）
+            */
+            x_admin_show(title,url,width,height){
+                if (title == null || title == '') {
+                    title=false;
+                };
+                if (url == null || url == '') {
+                    url="404.html";
+                };
+                if (width == null || width == '') {
+                    width=800;
+                };
+                if (height == null || height == '') {
+                    height=($(window).height() - 50);
+                };
+
+                layer.open({
+                    type: 2,
+                    area: [width+'px', height +'px'],
+                    fix: false, //不固定
+                    maxmin: true,
+                    shadeClose: true,
+                    shade:0.4,
+                    title: title,
+                    content: url,
+                    end: function () {
+                        app.search();
+                        app.x_admin_close()
+                    }
+                });
+            },
+            /*关闭弹出框口*/
+            x_admin_close(){
+                const index = parent.layer.getFrameIndex(window.name);
+                parent.layer.close(index);
+            },
+            //单个删除
+            delOne(id){
+                this.$confirm('确认要删除该团队吗？', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    this.checkedIds.push(id);
+                    //执行删除方法
+                    this.del();
+                }).catch((error) => {
+                    console.log(error.message);
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            },
+            delAll(){
+                if(this.checkedIds.length==0){
+                    this.$message({
+                        type: 'info',
+                        message: '请先勾选要删除的团队'
+                    });
+                    return;
+                }
+                this.$confirm('确认要删除所有选中的活动吗？', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    //执行删除方法
+                    this.del();
+                }).catch((error) => {
+                    console.log(error.message);
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            },
+            //删除
+            del(){
+                axios.post("/activity/delete",this.checkedIds).then((res)=>{
+                    if(res.data.flag){
+                        this.search();
+                        this.$message({
+                            type: 'success',
+                            message: '删除成功!'
+                        });
+                        //如果删除选中为当前页全部数据，则页码提前一页，否则还在本页
+                        if(this.checkedIds.length == this.communityList.length){
+                            if(this.searchMap.pageNum!=1){
+                                this.searchMap.pageNum = this.searchMap.pageNum-1;
+                            }
+                        }
+                        //置空选中的复选框
+                        this.checkedIds=[];
+                        this.search();
+                    }
+                });
+            },
+            //Vue复选框全选、全不选
+            allChecked() {
+                if (this.checkedIds.length === this.communityList.length) {
+                    // 全不选
+                    this.checkedIds = [];
+                } else {
+                    this.checkedIds = [];
+                    // 全选
+                    this.communityList.forEach((item) =>{
+                        this.checkedIds.push(item.id); // 与checkbox的value统一
+                    })
+                }
+            },
+        },
+        created() {//Vue生命周期方法，加载页面时会执行该方法
+            //初始化layui组件
+            layui.use(['laydate','element','laypage','layer'], ()=>{
+                $ = layui.jquery;//jquery
+                lement = layui.element();//面包导航
+                layer = layui.layer;//弹出层
+                okLoading.close($);
+                //以上模块根据需要引入
+                layer.ready(()=>{ //为了layer.ext.js加载完毕再执行
+                    layer.photos({
+                        photos: '#x-img'
+                        //,shift: 5 //0-6的选择，指定弹出图片动画类型，默认随机
+                    });
+                    app.search();
+                });
+            });
+        }
+    });
+</script>
+
+</body>
+</html>

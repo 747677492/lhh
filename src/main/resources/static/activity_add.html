@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>
+        活动管理
+    </title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="stylesheet" href="css/main.css" media="all">
+    <script type="text/javascript" src="lib/loading/okLoading.js"></script>
+    <!--导入ElementUI样式列表，css样式一般都在页面头部-->
+    <link rel="stylesheet" href="/css/index.css">
+    <style>
+        .x-nav{
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="x-body" id="app">
+    <div class="x-nav">
+            <span class="layui-breadcrumb">
+              <a><cite>首页</cite></a>
+              <a><cite>活动管理</cite></a>
+              <a><cite>{{title}}</cite></a>
+            </span>
+    </div>
+    <el-form :model="home" :rules="rules" ref="homeFormRef" label-width="120px" class="demo-ruleForm">
+        <el-form-item label="所属团队" prop="teamName">
+            <el-select v-model="home.teamName" @change="addCommunityId" clearable placeholder="---请选择">
+                <el-option
+                        v-for="item in communityOptions"
+                        :key="item.id"
+                        :label="item.teamName"
+                        :value="item.teamName">
+                </el-option>
+            </el-select>
+        </el-form-item>
+        <el-form-item label="活动名称" prop="activityName">
+            <el-input v-model="home.activityName" placeholder="请输入内容"></el-input>
+        </el-form-item>
+        <el-form-item label="活动标题" prop="title">
+            <el-input v-model="home.title" placeholder="请输入内容"></el-input>
+        </el-form-item>
+        <el-form-item label="活动地址" prop="address">
+            <el-input v-model="home.address" placeholder="请输入内容"></el-input>
+        </el-form-item>
+        <el-form-item label="创建时间" prop="createTime">
+            <div class="block">
+                <el-date-picker
+                        v-model="home.createTime"
+                        align="left"
+                        type="date"
+                        placeholder="选择创建时间"
+                        :picker-options="pickerOptions">
+                </el-date-picker>
+            </div>
+        </el-form-item>
+        <el-form-item label="更新时间" prop="updateTime">
+            <div class="block">
+                <el-date-picker
+                        v-model="home.updateTime"
+                        align="left"
+                        type="date"
+                        placeholder="选择更新时间"
+                        :picker-options="pickerOptions">
+                </el-date-picker>
+            </div>
+        </el-form-item>
+        <el-form-item label="开始时间" prop="startTime">
+            <div class="block">
+                <el-date-picker
+                        v-model="home.startTime"
+                        align="left"
+                        type="date"
+                        placeholder="选择开始时间"
+                        :picker-options="pickerOptions">
+                </el-date-picker>
+            </div>
+        </el-form-item>
+        <el-form-item label="结束时间" prop="endTime">
+            <div class="block">
+                <el-date-picker
+                        v-model="home.endTime"
+                        align="left"
+                        type="date"
+                        placeholder="选择结束时间"
+                        :picker-options="pickerOptions">
+                </el-date-picker>
+            </div>
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+            <el-radio-group v-model="home.status" name="desc">
+                <el-radio label="0">未开始</el-radio>
+                <el-radio label="1">已结束</el-radio>
+            </el-radio-group>
+        </el-form-item>
+        <el-form-item>
+            <el-button type="primary" @click="save()" style="text-align: center">添加</el-button>
+            <el-button @click="clearAll()" style="text-align: center">重置</el-button>
+        </el-form-item>
+    </el-form>
+</div>
+<script src="lib/layui/layui.js" charset="utf-8"></script>
+<script src="js/x-layui.js" charset="utf-8"></script>
+<script src="./js/jquery-3.4.1.min.js" charset="utf-8"></script>
+<!--<script src="/static/xiyuan/js/jquery.js" charset="utf-8"></script>-->
+<!--js脚本一般是放在页面尾部-->
+<!--Vue js脚本-->
+<script src="/js/vue.js" charset="utf-8"></script>
+<!--引入ElementUI组件库-->
+<script src="/js/index.js" charset="utf-8"></script>
+<!--引入Axios js脚本-->
+<script src="/js/axios.js" charset="utf-8"></script>
+<script>
+    var app = new Vue({
+        el:"#app",
+        data:{
+            title:"活动添加",
+            home:{id:'',teamName:''},
+            //团队选择
+            communityOptions:[{
+                id: '1',
+                teamName: ''
+            },
+                {
+                    id: '2',
+                    teamName: ''
+                }
+            ],
+            // //栋楼选择
+            // buildingOptions:[{
+            //     id: '1',
+            //     name: 'A栋'
+            // },
+            //     {
+            //         id: '2',
+            //         name: 'B栋'
+            //     }
+            // ],
+            //入住时间选择
+            pickerOptions: {
+                disabledDate(time) {
+                    return time.getTime() > Date.now();
+                },
+                shortcuts: [{
+                    text: '今天',
+                    onClick(picker) {
+                        picker.$emit('pick', new Date());
+                    }
+                }, {
+                    text: '昨天',
+                    onClick(picker) {
+                        const date = new Date();
+                        date.setTime(date.getTime() - 3600 * 1000 * 24);
+                        picker.$emit('pick', date);
+                    }
+                }, {
+                    text: '一周前',
+                    onClick(picker) {
+                        const date = new Date();
+                        date.setTime(date.getTime() - 3600 * 1000 * 24 * 7);
+                        picker.$emit('pick', date);
+                    }
+                }]
+            },
+            rules: {
+                teamName: [
+                    { required: true, message: '请选择团队', trigger: 'blur' }
+                ],
+                activityName:[
+                    { required: true, message: '请输入活动名称', trigger: 'blur' }
+                ],
+                title:[
+                    { required: true ,message: "请输入活动标题",trigger: 'blur'}
+                ],
+                address:[
+                    { required: true, message: '请输入活动地址', trigger: 'blur' }
+                ],
+                createTime:[
+                    { required: true, message: '请选择创建时间', trigger: 'blur' }
+                ],
+                updateTime:[
+                    { required: true, message: '请选择更新时间', trigger: 'blur' }
+
+                ],
+                startTime:[
+                    { required: true, message: '请选择开始时间', trigger: 'blur' }
+                ],
+                endTime:[
+                    { required: true, message: '请选择结束时间', trigger: 'blur' }
+                ],
+                status:[
+                    { required: true, message: '请选活动状态', trigger: 'change' }
+                ]
+            }
+        },
+        methods:{
+            //通过Id查询信息
+            findById(){
+                axios.get("/activity/findById?id="+this.home.id).then((res)=>{
+                    if(res.data.flag){
+                        this.home = res.data.data;
+                    }else{
+                        this.Message({
+                            message: res.data.message,
+                            type: 'error'
+                        })
+                    }
+                });
+            },
+            getAllCommunity(){
+                //ajax异步请求，不需要刷新页面，就可以动态刷新页面数据
+                //获取志愿团队列表
+                axios.post("/team/searchAll").then((res)=>{
+                    console.log("获取团队数据",res)
+                    if(res.status === 200){
+                        this.communityOptions = []
+                        res.data.forEach((item)=>{
+                            this.communityOptions.push({
+                                id:item.id,
+                                teamName:item.teamName
+                            })
+                        })
+                    }
+                });
+            },
+            getAllBuilding(){
+                //ajax异步请求，不需要刷新页面，就可以动态刷新页面数据
+                //获取小区列表
+                axios.post("/activity/searchAll").then((res)=>{
+                    console.log("获取楼栋数据",res)
+                    if(res.status === 200){
+                        this.buildingOptions = []
+                        res.data.forEach((item)=>{
+                            this.buildingOptions.push({
+                                id:item.id,
+                                name:item.name
+                            })
+                        })
+                    }
+                });
+            },
+            //表达重置
+            clearAll() {
+                this.$refs.homeFormRef.resetFields();
+            },
+            save(){
+                var method = "";
+                if(this.home.id !== null){
+                    method = "update"
+                }else{
+                    method = "add"
+                }
+                console.log("表格数据",this.home)
+                this.$refs.homeFormRef.validate((valid) => {
+                    if (valid) {
+                        axios.post("/activity/"+method,this.home).then((res)=>{
+                            if(res.data.flag){
+                                this.$message({
+                                    message: res.data.message,
+                                    type: 'success'
+                                });
+                                if(method === "add")app.clearAll();
+                            }
+                        }).catch(error=>{
+                            this.$message({
+                                message: res.data.message,
+                                type: 'error',
+                                duration:3000
+                            });
+                        });
+                    } else {
+                        this.$message({
+                            message: "提交错误，表中信息有误",
+                            type: 'error'
+                        });
+                        return false;
+                    }
+                });
+            },
+            getQueryString(name){
+                let reg = `(^|&)${name}=([^&]*)(&|$)`
+                let r = window.location.search.substr(1).match(reg);
+                if (r != null) return unescape(r[2]); return null;
+            },
+            updateTime(date, format) {
+                date = new Date(date);
+                var o = {
+                    'M+' : date.getMonth() + 1, //month
+                    'd+' : date.getDate(), //day
+                    'H+' : date.getHours()+8, //hour+8小时
+                    'm+' : date.getMinutes(), //minute
+                    's+' : date.getSeconds(), //second
+                    'q+' : Math.floor((date.getMonth() + 3) / 3), //quarter
+                    'S' : date.getMilliseconds() //millisecond
+                };
+                if (/(y+)/.test(format))
+                    format = format.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length));
+                for (var k in o)
+                    if (new RegExp('(' + k + ')').test(format))
+                        format = format.replace(RegExp.$1, RegExp.$1.length == 1 ? o[k] : ('00' + o[k]).substr(('' + o[k]).length));
+                return new Date(format);
+            },
+            //小区Id处理
+            addCommunityId(data){
+                console.log("改变的数据",data)
+                // communityOptions:[{
+                //     id: '1',
+                //     teamName: ''
+                // },
+                //     {
+                //         id: '2',
+                //         teamName: ''
+                //     }
+                // ]
+                if(this.communityOptions.length>=1){
+                    const array = this.communityOptions.filter((item)=>{
+                        if(item.teamName === data){
+                            return item
+                        }
+                    })
+                    if(array.length>=1){
+                        this.home.teamId = array[0].id
+                        this.home.teamName = array[0].teamName
+                    }else{
+                        return
+                    }
+                }else{
+                    this.getAllCommunity()
+                    this.addCommunityId(data)
+                }
+            },
+            //楼栋Id处理
+            addBuildingId(data){
+                console.log("改变的数据",data)
+                if(this.buildingOptions.length>=1){
+                    const array = this.buildingOptions.filter((item)=>{
+                        if(item.name === data){
+                            return item
+                        }
+                    })
+                    if(array.length>=1){
+                        this.home.buildingId = array[0].id
+                    }else{
+                        return
+                    }
+                }else{
+                    this.getAllBuilding()
+                    this.addCommunityId(data)
+                }
+            },
+
+        },
+        created:function(){
+            this.getAllBuilding()
+            this.getAllCommunity()
+            layui.use(['element','layer','form'], function(){
+                $ = layui.jquery;//jquery
+                lement = layui.element();//面包导航
+                layer = layui.layer;//弹出层
+                form = layui.form();
+                okLoading.close($);
+            });
+            //获取父页面传递参数，小区ID
+            this.home.id = this.getQueryString("id");
+            //根据小区ID获取小区对象，进行数据回显
+            if(this.home.id != null && this.home.id != ''){
+                this.title="修改房产";
+                this.findById()
+            }
+        },
+        computed:{
+            validatedPhone(rule,value,callback){
+                console.log("检验")
+                if(!value) {
+                    return callback(new Error("手机号码不能为空"))
+                }
+                if((/^1[3456789]\d{9}$/.test(value))) {
+                    callback()
+                }else{
+                    return callback(new Error("手机号码不正确"))
+                }
+            },
+        }
+    });
+</script>
+<!--栏目缩略图上传-->
+
+</body>
+</html>
