@@ -1,5 +1,6 @@
 package com.lhh.volunteerservicemanagement.controller;
 
+import com.lhh.volunteerservicemanagement.common.Result;
 import com.lhh.volunteerservicemanagement.controller.request.LoginRequst;
 import com.lhh.volunteerservicemanagement.entity.User;
 import com.lhh.volunteerservicemanagement.service.UserService;
@@ -44,22 +45,23 @@ public class LoginController implements WebMvcConfigurer {
 
 
     @RequestMapping(value = "/loginPage",method = {RequestMethod.POST,RequestMethod.GET})
-    private String login( LoginRequst request, HttpSession session){
+    private Result login(LoginRequst request, HttpSession session){
         String name = request.getUsername();
         String password = request.getPassword();
         String role = request.getRole();
         User tname = userService.loginPage(name,password,role);
         System.out.println(tname);
+
         if (tname==null){
-            return "500";
+            return new Result(false,500,"账号或密码错误！");
         }else {
             session.setAttribute("tname",tname.getUsername());
             if ("admin".equals(role)){
-                return "./index.html";
+                return new Result(true,200,"./index.html");
             }else if ("user".equals(role)){
-                return "./volunteer_index.html";
+                return new Result(true,200,"./volunteer_index.html");
             }else {
-                return "./team_index.html";
+                return new Result(true,200,"./team_index.html");
             }
         }
     }

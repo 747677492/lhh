@@ -50,7 +50,6 @@
                     // },function  () {
                     //     location.href = "./index.html";
                     // })
-                    console.log(data.field.role)
                     $.ajax({
                         url: "/loginPage",
                         dataType: "json",
@@ -61,11 +60,16 @@
                             role: data.field.role
                         },
                         success: function (data) {
-                            if (data!="500"){
-                                location.href = data;
+                            console.log("aaa")
+                            console.log(data+"aaa")
+                            if (data.code!="500"){
+                                location.href = data.message;
                             }else {
                                 alert("用户名或密码错误！")
                             }
+                        },
+                        error: function (data) {
+                            console.log(data)
                         }
                     })
                     return false;

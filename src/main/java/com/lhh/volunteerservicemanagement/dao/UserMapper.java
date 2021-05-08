@@ -30,7 +30,7 @@ public interface UserMapper extends Mapper<User> {
     User getAllUserByName(@Param("username") String username);
 
     @Select("SELECT t1.username FROM tb_user t1 left join tb_role t2 on t1.role=t2.id where username=#{username} and password=#{password} and t2.name=#{role}")
-    User loginPage(@Param("username")String username,@Param("password")String password,@Param("password")String role);
+    User loginPage(@Param("username")String username,@Param("password")String password,@Param("role")String role);
 
     List<User> getUserByUsernameAndPass(@Param("username") String username,@Param("pass") String pass);
 
